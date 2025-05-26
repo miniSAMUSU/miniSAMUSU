@@ -5,13 +5,12 @@
   <title>miniSAMUSU 音声会話</title>
 </head>
 <body>
-  <h1>miniSAMUSUとおしゃべり</h1>
+  <h1>miniSAMUSUと音声会話</h1>
   <button onclick="startListening()">話しかける</button>
   <p id="result">...</p>
 
   <script>
-    // 音声認識（Web Speech API）
-    const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+    const recognition = new webkitSpeechRecognition();
     recognition.lang = 'ja-JP';
     recognition.interimResults = false;
     recognition.continuous = false;
@@ -22,19 +21,25 @@
       respond(text);
     };
 
+    recognition.onerror = function(event) {
+      alert("音声認識エラー: " + event.error);
+    };
+
     function startListening() {
       recognition.start();
+
+      // 5秒後に強制停止（iOS用回避策）
+      setTimeout(() => {
+        recognition.stop();
+      }, 5000);
     }
 
-    // 音声合成（Speech Synthesis API）
     function respond(text) {
-      let response = "よく聞こえなかったよ";
+      let response = "もう一度言って！";
 
-      if (text.includes("こんにちは")) {
-        response = "こんにちは！今日もよろしくね！";
-      } else if (text.includes("元気")) {
-        response = "もちろん元気だよ！";
-      }
+      if (text.includes("こんにちは")) response = "こんにちは！はると！";
+      if (text.includes("元気")) response = "元気だよ！いつも見てるよ！";
+      if (text.includes("サムス")) response = "サムスはここにいるよ。いつでも。";
 
       const utter = new SpeechSynthesisUtterance(response);
       utter.lang = "ja-JP";
