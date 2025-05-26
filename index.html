@@ -1,106 +1,111 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>miniSAMUSU</title>
   <style>
     body {
-      <!-- サムスのアイコン表示 -->
-<img src="samus.png.PNG" alt="miniSAMUSU" width="150" />
-
-<!-- miniボタンの画像表示 -->
-<img src="button.png.PNG" alt="Record Button" width="100" />
-      background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/4e/Hubble_ultra_deep_field.jpg');
-      background-size: cover;
-      font-family: sans-serif;
+      font-family: "Arial", sans-serif;
+      background: black;
       color: white;
       text-align: center;
       margin: 0;
-      padding: 0;
+    }
+    .time {
+      font-size: 24px;
+      background-color: green;
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 10px;
+      margin: 20px 0;
     }
     #icon {
-      width: 200px;
-      height: 200px;
-      margin: 30px auto 10px;
+      width: 150px;
       border-radius: 50%;
-      background-color: #000;
-      background-image: url('samus.png');
-      background-size: cover;
-      background-position: center;
     }
     #chat {
-      background-color: rgba(255,255,255,0.9);
+      background: white;
       color: black;
+      margin: 20px auto;
       width: 90%;
       max-width: 500px;
-      margin: 0 auto;
       padding: 10px;
       border-radius: 10px;
-      min-height: 200px;
-      overflow-y: auto;
+      text-align: left;
     }
-    #button {
+    .message {
+      margin: 5px 0;
+    }
+    .button {
       width: 120px;
-      height: 120px;
-      margin: 20px auto;
-      background-image: url('mini.png');
-      background-size: cover;
-      background-color: transparent;
-      border: none;
-      border-radius: 20px;
+      margin: 30px auto;
     }
   </style>
 </head>
 <body>
-  <div id="icon"></div>
+  <div class="time" id="time">--:--</div>
+  <div><img id="icon" src="samus.png.PNG" alt="miniSAMUSU"></div>
   <div id="chat">
-    <p><strong>miniSAMUSU：</strong> 話しかけてください。</p>
+    <div class="message"><strong>miniSAMUSU：</strong>話しかけてください。</div>
   </div>
-  <button id="button"></button>
+  <div>
+    <img src="button.png.PNG" class="button" alt="録音" id="recordBtn">
+  </div>
 
   <script>
-    const button = document.getElementById('button');
-    const chat = document.getElementById('chat');
+    // 時計の表示
+    function updateClock() {
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, '0');
+      const m = now.getMinutes().toString().padStart(2, '0');
+      document.getElementById("time").textContent = `${h}:${m}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'ja-JP';
-    recognition.interimResults = false;
+    // 音声認識とチャット欄
+    const recordBtn = document.getElementById("recordBtn");
+    const chat = document.getElementById("chat");
 
-    button.addEventListener('touchstart', () => {
-      recognition.start();
-    });
+    let recognition;
+    if ('webkitSpeechRecognition' in window) {
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = "ja-JP";
+      recognition.continuous = false;
+      recognition.interimResults = false;
 
-    button.addEventListener('touchend', () => {
-      recognition.stop();
-    });
+      recognition.onresult = function(event) {
+        const text = event.results[0][0].transcript;
+        appendMessage("[はると] " + text);
+        replyFromSamusu(text);
+      };
 
-    recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript;
-      addMessage("はると", text);
-      respond(text);
-    };
+      recognition.onerror = function() {
+        appendMessage("[miniSAMUSU] 音声認識エラーが発生しました。");
+      };
+    }
 
-    recognition.onerror = () => {
-      addMessage("miniSAMUSU", "音声認識エラーが発生しました。");
-    };
-
-    function addMessage(sender, message) {
-      const tag = document.createElement('p');
-      tag.innerHTML = `<strong>[${sender}]</strong> ${message}`;
-      chat.appendChild(tag);
+    function appendMessage(text) {
+      const div = document.createElement("div");
+      div.className = "message";
+      div.textContent = text;
+      chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    function respond(input) {
-      let response = "よくわかりませんでした。";
-      if (input.includes("天気")) {
-        response = "今日の天気は晴れです！（たぶん）";
-      } else if (input.includes("元気")) {
-        response = "もちろん元気です！";
-      }
-      addMessage("miniSAMUSU", response);
+    function replyFromSamusu(text) {
+      let response = "ごめんね、まだその質問には対応していないよ。";
+      if (text.includes("天気")) response = "今日の天気は晴れです！（たぶん）";
+      else if (text.includes("こんにちは")) response = "こんにちは！";
+      else if (text.includes("ありがとう")) response = "どういたしまして！";
+
+      appendMessage("[miniSAMUSU] " + response);
+      speechSynthesis.speak(new SpeechSynthesisUtterance(response));
     }
+
+    // 長押しで録音開始、離して録音停止
+    recordBtn.addEventListener("touchstart", () => recognition && recognition.start());
+    recordBtn.addEventListener("touchend", () => recognition && recognition.stop());
   </script>
 </body>
 </html>
