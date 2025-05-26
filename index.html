@@ -1,111 +1,133 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>miniSAMUSU</title>
   <style>
     body {
-      font-family: "Arial", sans-serif;
-      background: black;
+      background-color: black;
       color: white;
+      font-family: sans-serif;
       text-align: center;
       margin: 0;
+      padding: 20px;
     }
     .time {
-      font-size: 24px;
-      background-color: green;
-      display: inline-block;
-      padding: 5px 10px;
-      border-radius: 10px;
-      margin: 20px 0;
+      font-size: 2em;
+      position: absolute;
+      top: 10px;
+      left: 20px;
     }
-    #icon {
-      width: 150px;
-      border-radius: 50%;
-    }
-    #chat {
-      background: white;
+    .chat {
+      background-color: white;
       color: black;
+      padding: 15px;
       margin: 20px auto;
-      width: 90%;
-      max-width: 500px;
-      padding: 10px;
+      max-width: 80%;
       border-radius: 10px;
       text-align: left;
     }
-    .message {
-      margin: 5px 0;
-    }
-    .button {
+    .icon {
       width: 120px;
-      margin: 30px auto;
+      border-radius: 50%;
+      margin: 10px auto;
+    }
+    .footer-logo {
+      margin-top: 30px;
+      width: 100px;
+    }
+    #micButton {
+      background: none;
+      border: none;
+      margin-top: 20px;
+    }
+    #micButton img {
+      width: 100px;
+      height: 100px;
     }
   </style>
 </head>
 <body>
-  <div class="time" id="time">--:--</div>
-  <div><img id="icon" src="samus.png.PNG" alt="miniSAMUSU"></div>
-  <div id="chat">
-    <div class="message"><strong>miniSAMUSU：</strong>話しかけてください。</div>
+  <div class="time" id="clock">00:00</div>
+  <div id="chatContainer">
+    <img src="samus.png.PNG" alt="サムス" class="icon" />
+    <div class="chat" id="chatBox">
+      <strong>miniSAMUSU：</strong> 話しかけてください。
+    </div>
   </div>
-  <div>
-    <img src="button.png.PNG" class="button" alt="録音" id="recordBtn">
-  </div>
+  <button id="micButton"><img src="button.png.PNG" alt="マイクボタン" /></button>
+  <img src="mini.png" class="footer-logo" alt="miniロゴ"/>
 
   <script>
-    // 時計の表示
+    // 時計表示
     function updateClock() {
       const now = new Date();
-      const h = now.getHours().toString().padStart(2, '0');
-      const m = now.getMinutes().toString().padStart(2, '0');
-      document.getElementById("time").textContent = `${h}:${m}`;
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${h}:${m}`;
     }
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 音声認識とチャット欄
-    const recordBtn = document.getElementById("recordBtn");
-    const chat = document.getElementById("chat");
-
+    // 録音切り替えフラグ
+    let isRecording = false;
     let recognition;
-    if ('webkitSpeechRecognition' in window) {
-      recognition = new webkitSpeechRecognition();
-      recognition.lang = "ja-JP";
-      recognition.continuous = false;
-      recognition.interimResults = false;
 
-      recognition.onresult = function(event) {
-        const text = event.results[0][0].transcript;
-        appendMessage("[はると] " + text);
-        replyFromSamusu(text);
-      };
+    const micButton = document.getElementById('micButton');
+    const chatBox = document.getElementById('chatBox');
 
-      recognition.onerror = function() {
-        appendMessage("[miniSAMUSU] 音声認識エラーが発生しました。");
-      };
+    function addMessage(speaker, message) {
+      const msg = document.createElement('div');
+      msg.innerHTML = `<strong>${speaker}</strong> ${message}`;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function appendMessage(text) {
-      const div = document.createElement("div");
-      div.className = "message";
-      div.textContent = text;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
+    micButton.addEventListener('click', () => {
+      if (!('webkitSpeechRecognition' in window)) {
+        addMessage('[miniSAMUSU]', '音声認識に対応していません。');
+        return;
+      }
+
+      if (!isRecording) {
+        recognition = new webkitSpeechRecognition();
+        recognition.lang = 'ja-JP';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          addMessage('[はると]', transcript);
+          respondTo(transcript);
+        };
+
+        recognition.onerror = () => {
+          addMessage('[miniSAMUSU]', '音声認識エラーが発生しました。');
+        };
+
+        recognition.start();
+        isRecording = true;
+      } else {
+        recognition.stop();
+        isRecording = false;
+      }
+    });
+
+    // サムスの返答処理
+    function respondTo(input) {
+      input = input.toLowerCase();
+
+      if (input.includes('天気')) {
+        addMessage('[miniSAMUSU]', '今日の天気は晴れです！（たぶん）');
+      } else if (input.includes('こんにちは')) {
+        addMessage('[miniSAMUSU]', 'こんにちは！');
+      } else if (input.includes('元気')) {
+        addMessage('[miniSAMUSU]', 'もちろん元気だよ！');
+      } else {
+        addMessage('[miniSAMUSU]', 'ごめんね、まだその質問には対応していないよ。');
+      }
     }
-
-    function replyFromSamusu(text) {
-      let response = "ごめんね、まだその質問には対応していないよ。";
-      if (text.includes("天気")) response = "今日の天気は晴れです！（たぶん）";
-      else if (text.includes("こんにちは")) response = "こんにちは！";
-      else if (text.includes("ありがとう")) response = "どういたしまして！";
-
-      appendMessage("[miniSAMUSU] " + response);
-      speechSynthesis.speak(new SpeechSynthesisUtterance(response));
-    }
-
-    // 長押しで録音開始、離して録音停止
-    recordBtn.addEventListener("touchstart", () => recognition && recognition.start());
-    recordBtn.addEventListener("touchend", () => recognition && recognition.stop());
   </script>
 </body>
 </html>
