@@ -1,77 +1,112 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>miniSAMUSU</title>
   <style>
     body {
-      font-family: "Arial", sans-serif;
+      background-image: url("https://upload.wikimedia.org/wikipedia/commons/3/3f/Hubble_ultra_deep_field.jpg");
+      background-size: cover;
+      background-position: center;
+      font-family: sans-serif;
+      color: white;
       text-align: center;
-      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
     }
-    #samus {
-      width: 200px;
+
+    .samus-icon {
       margin-top: 40px;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
     }
-    #chatbox {
-      width: 90%;
-      max-width: 500px;
+
+    .chat-box {
+      background: white;
+      color: black;
+      width: 80%;
+      max-width: 400px;
       margin: 20px auto;
-      background: #fff;
-      border-radius: 10px;
       padding: 15px;
-      box-shadow: 0 0 10px #ccc;
-      min-height: 100px;
+      border-radius: 10px;
+      min-height: 120px;
       text-align: left;
+      overflow-y: auto;
     }
-    #speakBtn {
-      background-color: #222;
-      color: #fff;
-      padding: 15px 30px;
+
+    .chat-message {
+      margin: 10px 0;
+    }
+
+    .chat-user {
+      font-weight: bold;
+    }
+
+    .record-btn {
+      margin: 30px auto;
+      width: 120px;
+      height: 120px;
+      background-image: url("https://chat.openai.com/mnt/data/8A2942A8-13AC-4066-AB63-6D51BCD40AE1.png");
+      background-size: cover;
       border: none;
-      border-radius: 30px;
-      font-size: 16px;
-      margin-top: 20px;
+      border-radius: 50%;
     }
   </style>
 </head>
 <body>
-  <img id="samus" src="samus_doberman.png" alt="サムス">
-  <div id="chatbox">サムス：話しかけてください。</div>
-  <button id="speakBtn">長押しで話す</button>
+  <img src="https://chat.openai.com/mnt/data/447582EF-F247-4E69-B937-65C8F4A6472C.png" alt="miniSAMUSU" class="samus-icon" />
+
+  <div class="chat-box" id="chat">
+    <div class="chat-message"><span class="chat-user">miniSAMUSU：</span>話しかけてください。</div>
+  </div>
+
+  <button class="record-btn" id="recordBtn"></button>
 
   <script>
-    const chatbox = document.getElementById('chatbox');
-    const speakBtn = document.getElementById('speakBtn');
+    let isRecording = false;
+    const chatBox = document.getElementById("chat");
 
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'ja-JP';
+    const recordBtn = document.getElementById("recordBtn");
+    recordBtn.addEventListener("touchstart", startRecording);
+    recordBtn.addEventListener("mousedown", startRecording);
+    recordBtn.addEventListener("touchend", stopRecording);
+    recordBtn.addEventListener("mouseup", stopRecording);
 
-    recognition.onresult = function(event) {
-      const userSpeech = event.results[0][0].transcript;
-      chatbox.innerHTML = `あなた：${userSpeech}<br>サムス：考え中...`;
+    function startRecording() {
+      isRecording = true;
+      console.log("録音開始");
+    }
 
-      // 返事をシンプルに（ここはあとでAI連携可）
-      let reply = "ごめんなさい、まだ学習中です。";
-      if (userSpeech.includes("こんにちは")) reply = "こんにちは！サムスです。";
-      if (userSpeech.includes("元気")) reply = "もちろん、絶好調です！";
+    function stopRecording() {
+      if (!isRecording) return;
+      isRecording = false;
+      const userSpeech = "今日はどんな天気？"; // ←仮のテキスト。後で音声認識で取得
+      displayChat("はると", userSpeech);
 
+      const response = generateResponse(userSpeech);
       setTimeout(() => {
-        chatbox.innerHTML = `あなた：${userSpeech}<br>サムス：${reply}`;
-        const uttr = new SpeechSynthesisUtterance(reply);
-        uttr.lang = 'ja-JP';
-        speechSynthesis.speak(uttr);
+        displayChat("miniSAMUSU", response);
       }, 1000);
-    };
+    }
 
-    speakBtn.addEventListener('mousedown', () => {
-      recognition.start();
-      chatbox.innerHTML = "サムス：聞いてます...";
-    });
+    function displayChat(user, text) {
+      const div = document.createElement("div");
+      div.className = "chat-message";
+      div.innerHTML = `<span class="chat-user">[${user}]</span> ${text}`;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-    speakBtn.addEventListener('mouseup', () => {
-      recognition.stop();
-    });
+    function generateResponse(input) {
+      if (input.includes("天気")) {
+        return "今日の天気は晴れです！（たぶん）";
+      } else if (input.includes("元気")) {
+        return "もちろん元気です！";
+      } else {
+        return "うん、聞いてるよ。";
+      }
+    }
   </script>
 </body>
 </html>
