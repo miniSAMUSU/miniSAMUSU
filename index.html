@@ -1,21 +1,45 @@
- <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>miniSAMUSU 起動中</title>
-  </head>
-  <body>
-    <h1>miniSAMUSU 起動中！</h1>
-    <p>こんにちは、世界！</p>
-    <button onclick="speak()">話す</button>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>miniSAMUSU 音声会話</title>
+</head>
+<body>
+  <h1>miniSAMUSUとおしゃべり</h1>
+  <button onclick="startListening()">話しかける</button>
+  <p id="result">...</p>
 
-    <script>
-      function speak() {
-        const text = "こんにちは、僕はminiSAMUSUだよ！";
-        const speech = new SpeechSynthesisUtterance(text);
-        speech.lang = "ja-JP";
-        window.speechSynthesis.speak(speech);
+  <script>
+    // 音声認識（Web Speech API）
+    const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+    recognition.lang = 'ja-JP';
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.onresult = function(event) {
+      const text = event.results[0][0].transcript;
+      document.getElementById("result").textContent = "あなた: " + text;
+      respond(text);
+    };
+
+    function startListening() {
+      recognition.start();
+    }
+
+    // 音声合成（Speech Synthesis API）
+    function respond(text) {
+      let response = "よく聞こえなかったよ";
+
+      if (text.includes("こんにちは")) {
+        response = "こんにちは！今日もよろしくね！";
+      } else if (text.includes("元気")) {
+        response = "もちろん元気だよ！";
       }
-    </script>
-  </body>
+
+      const utter = new SpeechSynthesisUtterance(response);
+      utter.lang = "ja-JP";
+      speechSynthesis.speak(utter);
+    }
+  </script>
+</body>
 </html>
