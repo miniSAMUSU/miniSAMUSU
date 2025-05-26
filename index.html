@@ -1,133 +1,128 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>miniSAMUSU</title>
   <style>
     body {
-      background-color: black;
-      color: white;
+      background-color: #000;
+      color: #fff;
       font-family: sans-serif;
       text-align: center;
-      margin: 0;
       padding: 20px;
     }
-    .time {
-      font-size: 2em;
-      position: absolute;
-      top: 10px;
-      left: 20px;
-    }
-    .chat {
-      background-color: white;
-      color: black;
-      padding: 15px;
-      margin: 20px auto;
-      max-width: 80%;
-      border-radius: 10px;
-      text-align: left;
-    }
-    .icon {
-      width: 120px;
-      border-radius: 50%;
+
+    .logo {
+      width: 100px;
       margin: 10px auto;
     }
-    .footer-logo {
-      margin-top: 30px;
-      width: 100px;
+
+    .chat-box {
+      background: #222;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 20px;
+      display: inline-block;
+      text-align: left;
     }
-    #micButton {
-      background: none;
-      border: none;
+
+    .message {
+      margin: 10px 0;
+    }
+
+    .user {
+      color: #0af;
+    }
+
+    .samu {
+      color: #0f0;
+    }
+
+    .button-area {
       margin-top: 20px;
     }
-    #micButton img {
-      width: 100px;
-      height: 100px;
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      background-color: #555;
+      color: white;
+    }
+
+    button:disabled {
+      background-color: #333;
+      color: #777;
     }
   </style>
 </head>
 <body>
-  <div class="time" id="clock">00:00</div>
-  <div id="chatContainer">
-    <img src="samus.png.PNG" alt="サムス" class="icon" />
-    <div class="chat" id="chatBox">
-      <strong>miniSAMUSU：</strong> 話しかけてください。
-    </div>
+
+  <h1>miniSAMUSU</h1>
+  <img src="samus.png.PNG" alt="miniSAMUSU" class="logo">
+
+  <div class="chat-box" id="chat">
+    <div class="message samu"><strong>miniSAMUSU：</strong>話しかけてください。</div>
   </div>
-  <button id="micButton"><img src="button.png.PNG" alt="マイクボタン" /></button>
-  <img src="mini.png" class="footer-logo" alt="miniロゴ"/>
+
+  <div class="button-area">
+    <button id="startButton">録音開始</button>
+    <button id="stopButton" disabled>録音停止</button>
+  </div>
 
   <script>
-    // 時計表示
-    function updateClock() {
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2, '0');
-      const m = String(now.getMinutes()).padStart(2, '0');
-      document.getElementById('clock').textContent = `${h}:${m}`;
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
+    let mediaRecorder;
+    let chunks = [];
+    const chat = document.getElementById("chat");
 
-    // 録音切り替えフラグ
-    let isRecording = false;
-    let recognition;
-
-    const micButton = document.getElementById('micButton');
-    const chatBox = document.getElementById('chatBox');
-
-    function addMessage(speaker, message) {
-      const msg = document.createElement('div');
-      msg.innerHTML = `<strong>${speaker}</strong> ${message}`;
-      chatBox.appendChild(msg);
-      chatBox.scrollTop = chatBox.scrollHeight;
+    function addMessage(sender, text) {
+      const div = document.createElement("div");
+      div.className = "message " + (sender === "user" ? "user" : "samu");
+      div.innerHTML = `<strong>[${sender === "user" ? "はると" : "miniSAMUSU"}]</strong> ${text}`;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
     }
 
-    micButton.addEventListener('click', () => {
-      if (!('webkitSpeechRecognition' in window)) {
-        addMessage('[miniSAMUSU]', '音声認識に対応していません。');
-        return;
-      }
+    document.getElementById("startButton").onclick = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        chunks = [];
 
-      if (!isRecording) {
-        recognition = new webkitSpeechRecognition();
-        recognition.lang = 'ja-JP';
-        recognition.continuous = false;
-        recognition.interimResults = false;
-
-        recognition.onresult = (event) => {
-          const transcript = event.results[0][0].transcript;
-          addMessage('[はると]', transcript);
-          respondTo(transcript);
+        mediaRecorder.ondataavailable = e => {
+          chunks.push(e.data);
         };
 
-        recognition.onerror = () => {
-          addMessage('[miniSAMUSU]', '音声認識エラーが発生しました。');
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: "audio/wav" });
+          const audioURL = URL.createObjectURL(blob);
+          const audio = new Audio(audioURL);
+          audio.play();
+
+          addMessage("samu", "録音が完了しました。再生します。");
         };
 
-        recognition.start();
-        isRecording = true;
-      } else {
-        recognition.stop();
-        isRecording = false;
+        mediaRecorder.start();
+        addMessage("samu", "録音を開始しました！");
+        document.getElementById("startButton").disabled = true;
+        document.getElementById("stopButton").disabled = false;
+      } catch (err) {
+        console.error(err);
+        addMessage("samu", "マイクの使用が許可されていません。");
       }
-    });
+    };
 
-    // サムスの返答処理
-    function respondTo(input) {
-      input = input.toLowerCase();
-
-      if (input.includes('天気')) {
-        addMessage('[miniSAMUSU]', '今日の天気は晴れです！（たぶん）');
-      } else if (input.includes('こんにちは')) {
-        addMessage('[miniSAMUSU]', 'こんにちは！');
-      } else if (input.includes('元気')) {
-        addMessage('[miniSAMUSU]', 'もちろん元気だよ！');
-      } else {
-        addMessage('[miniSAMUSU]', 'ごめんね、まだその質問には対応していないよ。');
+    document.getElementById("stopButton").onclick = () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        document.getElementById("startButton").disabled = false;
+        document.getElementById("stopButton").disabled = true;
       }
-    }
+    };
   </script>
+
 </body>
 </html>
