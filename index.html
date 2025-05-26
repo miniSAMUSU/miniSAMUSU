@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>miniSAMUSU</title>
   <style>
     body {
@@ -13,7 +13,7 @@
       margin: 0;
       padding: 10px;
     }
-    img.logo {
+    .logo {
       width: 30vw;
       max-width: 120px;
       margin-top: 10px;
@@ -48,13 +48,13 @@
 </head>
 <body>
 
-  <img src="samus.png.PNG" alt="miniSAMUSU" class="logo"><br>
+  <img src="samus.png" alt="miniSAMUSU" class="logo"><br>
 
   <div id="chat"></div>
 
   <div id="buttons">
-    <img src="mic_start.png.PNG" alt="録音開始" class="mic-button" onclick="startRecording()">
-    <img src="mic_stop.png.PNG" alt="録音停止" class="mic-button" onclick="stopRecording()">
+    <img src="mic_start.png" alt="録音開始" class="mic-button" onclick="startRecording()">
+    <img src="mic_stop.png" alt="録音停止" class="mic-button" onclick="stopRecording()">
   </div>
 
   <script>
@@ -67,6 +67,14 @@
       div.innerHTML = `<span class="${sender === 'はると' ? 'user' : 'bot'}">[${sender}]</span> ${text}`;
       chat.appendChild(div);
       window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "ja-JP";
+      utterance.rate = 1.0; // ラグ軽減（少し速めに返す）
+      speechSynthesis.cancel(); // 先に止めておくと即座に再生できる
+      speechSynthesis.speak(utterance);
     }
 
     function startRecording() {
@@ -98,27 +106,49 @@
     }
 
     function stopRecording() {
-      if (recognition) {
-        recognition.stop();
-        appendMessage("miniSAMUSU", "録音を停止しました。");
-      }
+      if (recognition) recognition.stop();
+      appendMessage("miniSAMUSU", "録音を停止しました。");
     }
 
     function respond(text) {
-      let response = "";
+      const input = text.toLowerCase();
+      let response = "ごめんね、まだその質問には対応していないよ。";
 
-      if (text.includes("元気")) {
-        response = "もちろん元気だよ！";
-      } else if (text.includes("こんにちは")) {
+      // あいさつ
+      if (input.includes("こんにちは")) {
         response = "こんにちは！今日も一緒にがんばろう。";
-      } else if (text.includes("天気")) {
-        response = "今日の天気は晴れだと思うよ。";
-      } else {
-        response = "ごめんね、まだその質問には対応していないよ。";
+      }
+      else if (input.includes("元気")) {
+        response = "もちろん元気だよ！はるとは？";
+      }
+      else if (input.includes("ありがとう")) {
+        response = "どういたしまして、いつでも頼ってね！";
+      }
+
+      // 解剖学
+      else if (input.includes("骨") && input.includes("数")) {
+        response = "人間の骨の数はおおよそ206本だよ。";
+      }
+      else if (input.includes("大腿骨")) {
+        response = "大腿骨は人体で最も長くて強い骨で、太ももにあるよ。";
+      }
+      else if (input.includes("筋肉") && input.includes("種類")) {
+        response = "筋肉には骨格筋、心筋、平滑筋の3種類があるよ。";
+      }
+
+      // 生理学
+      else if (input.includes("血液") && input.includes("役割")) {
+        response = "血液は酸素や栄養を全身に運ぶ働きがあるよ。";
+      }
+      else if (input.includes("肺") && input.includes("働き")) {
+        response = "肺は酸素を取り込み、二酸化炭素を排出する大事な器官だよ。";
+      }
+      else if (input.includes("心臓") && input.includes("働き")) {
+        response = "心臓は血液を全身に送り出すポンプの役割をしているよ。";
       }
 
       appendMessage("miniSAMUSU", response);
-      speechSynthesis.speak(new SpeechSynthesisUtterance(response));
+      speak(response);
     }
   </script>
 
