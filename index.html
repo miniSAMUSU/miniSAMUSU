@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>miniSAMUSU</title>
   <style>
     body {
@@ -11,140 +11,130 @@
       font-family: sans-serif;
       text-align: center;
       margin: 0;
-      padding: 10px;
     }
-    .logo {
-      width: 30vw;
-      max-width: 120px;
-      margin-top: 10px;
-    }
-    .chatbox {
+    #chat {
       background-color: #222;
-      padding: 10px;
-      margin: 10px auto;
-      max-width: 90%;
       border-radius: 10px;
+      margin: 20px;
+      padding: 10px;
       text-align: left;
-      word-wrap: break-word;
+      max-width: 90%;
+      margin-left: auto;
+      margin-right: auto;
     }
-    .user { color: #00BFFF; font-weight: bold; }
-    .bot { color: #00FF7F; font-weight: bold; }
-    .mic-button {
-      width: 30vw;
-      max-width: 100px;
+    .user {
+      color: #4fc3f7;
+      font-weight: bold;
+    }
+    .samus {
+      color: #00e676;
+      font-weight: bold;
+    }
+    .icon {
+      width: 100px;
+      border-radius: 50%;
+      margin-top: 15px;
+    }
+    .btn {
+      width: 100px;
       margin: 10px;
-    }
-    #buttons {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    footer {
-      font-size: 12px;
-      color: #888;
-      margin-top: 20px;
     }
   </style>
 </head>
 <body>
 
-  <img src="samus.png" alt="miniSAMUSU" class="logo"><br>
+  <img src="samus.png.PNG" alt="miniSAMUSU" class="icon">
 
-  <div id="chat"></div>
+  <div id="chat">
+    <div><span class="samus">[miniSAMUSU]</span> こんにちは。話しかけてください。</div>
+  </div>
 
-  <div id="buttons">
-    <img src="mic_start.png" alt="録音開始" class="mic-button" onclick="startRecording()">
-    <img src="mic_stop.png" alt="録音停止" class="mic-button" onclick="stopRecording()">
+  <div>
+    <img src="mic_start.png.PNG" class="btn" onclick="startRecording()" alt="開始">
+    <img src="mic_stop.png.PNG" class="btn" onclick="stopRecording()" alt="停止">
   </div>
 
   <script>
-    const chat = document.getElementById('chat');
+    const chat = document.getElementById("chat");
     let recognition;
 
     function appendMessage(sender, text) {
-      const div = document.createElement('div');
-      div.classList.add('chatbox');
-      div.innerHTML = `<span class="${sender === 'はると' ? 'user' : 'bot'}">[${sender}]</span> ${text}`;
+      const div = document.createElement("div");
+      div.innerHTML = `<span class="${sender === 'はると' ? 'user' : 'samus'}">[${sender}]</span> ${text}`;
       chat.appendChild(div);
-      window.scrollTo(0, document.body.scrollHeight);
+      chat.scrollTop = chat.scrollHeight;
     }
 
     function speak(text) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "ja-JP";
-      utterance.rate = 1.0; // ラグ軽減（少し速めに返す）
-      speechSynthesis.cancel(); // 先に止めておくと即座に再生できる
-      speechSynthesis.speak(utterance);
+      const uttr = new SpeechSynthesisUtterance(text);
+      uttr.lang = "ja-JP";
+      uttr.rate = 1.0;
+      speechSynthesis.cancel(); // ラグ防止
+      speechSynthesis.speak(uttr);
     }
 
     function startRecording() {
-      if (!('webkitSpeechRecognition' in window)) {
-        appendMessage("miniSAMUSU", "音声認識に非対応です。");
+      if (!("webkitSpeechRecognition" in window)) {
+        appendMessage("miniSAMUSU", "音声認識に対応していません。");
         return;
       }
 
       recognition = new webkitSpeechRecognition();
-      recognition.lang = 'ja-JP';
-      recognition.continuous = false;
+      recognition.lang = "ja-JP";
       recognition.interimResults = false;
+      recognition.continuous = false;
 
       recognition.onstart = () => {
-        appendMessage("miniSAMUSU", "話しかけてください。");
+        appendMessage("miniSAMUSU", "録音を開始しました。");
+      };
+
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        appendMessage("はると", text);
+        respond(text);
       };
 
       recognition.onerror = () => {
         appendMessage("miniSAMUSU", "音声認識エラーが発生しました。");
       };
 
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        appendMessage("はると", transcript);
-        respond(transcript);
-      };
-
       recognition.start();
     }
 
     function stopRecording() {
-      if (recognition) recognition.stop();
-      appendMessage("miniSAMUSU", "録音を停止しました。");
+      if (recognition) {
+        recognition.stop();
+        appendMessage("miniSAMUSU", "録音を停止しました。");
+      }
     }
 
     function respond(text) {
       const input = text.toLowerCase();
       let response = "ごめんね、まだその質問には対応していないよ。";
 
-      // あいさつ
+      // 挨拶や会話
       if (input.includes("こんにちは")) {
         response = "こんにちは！今日も一緒にがんばろう。";
-      }
-      else if (input.includes("元気")) {
-        response = "もちろん元気だよ！はるとは？";
-      }
-      else if (input.includes("ありがとう")) {
-        response = "どういたしまして、いつでも頼ってね！";
-      }
+      } else if (input.includes("元気")) {
+        response = "もちろん元気だよ！";
+      } else if (input.includes("ありがとう")) {
+        response = "どういたしまして、はると。";
 
       // 解剖学
-      else if (input.includes("骨") && input.includes("数")) {
-        response = "人間の骨の数はおおよそ206本だよ。";
-      }
-      else if (input.includes("大腿骨")) {
-        response = "大腿骨は人体で最も長くて強い骨で、太ももにあるよ。";
-      }
-      else if (input.includes("筋肉") && input.includes("種類")) {
-        response = "筋肉には骨格筋、心筋、平滑筋の3種類があるよ。";
-      }
+      } else if (input.includes("骨") && input.includes("数")) {
+        response = "人間の骨の数は約206本あるよ。";
+      } else if (input.includes("筋肉") && input.includes("種類")) {
+        response = "筋肉には骨格筋・平滑筋・心筋の3種類があるよ。";
+      } else if (input.includes("大腿骨")) {
+        response = "大腿骨は人間の体で最も長く、太ももにある骨だよ。";
 
       // 生理学
-      else if (input.includes("血液") && input.includes("役割")) {
-        response = "血液は酸素や栄養を全身に運ぶ働きがあるよ。";
-      }
-      else if (input.includes("肺") && input.includes("働き")) {
-        response = "肺は酸素を取り込み、二酸化炭素を排出する大事な器官だよ。";
-      }
-      else if (input.includes("心臓") && input.includes("働き")) {
-        response = "心臓は血液を全身に送り出すポンプの役割をしているよ。";
+      } else if (input.includes("血液") && input.includes("役割")) {
+        response = "血液は酸素や栄養を運ぶ大切な働きがあるよ。";
+      } else if (input.includes("心臓") && input.includes("働き")) {
+        response = "心臓は血液を全身に送るポンプのような働きをするよ。";
+      } else if (input.includes("肺") && input.includes("働き")) {
+        response = "肺は酸素を取り込んで二酸化炭素を排出する器官だよ。";
       }
 
       appendMessage("miniSAMUSU", response);
@@ -152,6 +142,5 @@
     }
   </script>
 
-  <footer>minisamusu.github.io</footer>
 </body>
 </html>
