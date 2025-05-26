@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>miniSAMUSU</title>
   <style>
     body {
@@ -15,6 +15,8 @@
 
     .logo {
       width: 100px;
+      height: 100px;
+      border-radius: 50%;
       margin: 10px auto;
     }
 
@@ -22,9 +24,12 @@
       background: #222;
       border-radius: 10px;
       padding: 15px;
-      margin-top: 20px;
-      display: inline-block;
+      margin: 20px auto;
+      width: 90%;
+      max-width: 500px;
       text-align: left;
+      overflow-y: auto;
+      max-height: 400px;
     }
 
     .message {
@@ -40,22 +45,14 @@
     }
 
     .button-area {
-      margin-top: 20px;
+      margin: 20px 0;
     }
 
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin: 5px;
-      border: none;
-      border-radius: 5px;
-      background-color: #555;
-      color: white;
-    }
-
-    button:disabled {
-      background-color: #333;
-      color: #777;
+    .mic-button {
+      width: 100px;
+      height: 100px;
+      margin: 10px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -69,13 +66,14 @@
   </div>
 
   <div class="button-area">
-    <button id="startButton">録音開始</button>
-    <button id="stopButton" disabled>録音停止</button>
+    <img src="mic_start.png" id="startButton" class="mic-button" alt="録音開始">
+    <img src="mic_stop.png" id="stopButton" class="mic-button" alt="録音停止" style="opacity: 0.5;">
   </div>
 
   <script>
-    let mediaRecorder;
-    let chunks = [];
+    let recognition;
+    const startBtn = document.getElementById("startButton");
+    const stopBtn = document.getElementById("stopButton");
     const chat = document.getElementById("chat");
 
     function addMessage(sender, text) {
@@ -86,42 +84,80 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    document.getElementById("startButton").onclick = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        chunks = [];
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "ja-JP";
+      speechSynthesis.speak(utterance);
+    }
 
-        mediaRecorder.ondataavailable = e => {
-          chunks.push(e.data);
-        };
+    function replyTo(input) {
+      input = input.toLowerCase();
+      let response = "ごめんね、まだその質問には対応していないよ。";
 
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: "audio/wav" });
-          const audioURL = URL.createObjectURL(blob);
-          const audio = new Audio(audioURL);
-          audio.play();
+      if (input.includes("こんにちは")) {
+        response = "こんにちは！今日も一緒にがんばろう。";
+      } else if (input.includes("天気")) {
+        response = "今日の天気は晴れだと思うよ。";
+      } else if (input.includes("元気")) {
+        response = "もちろん元気だよ！はるとは？";
+      } else if (input.includes("ありがとう")) {
+        response = "どういたしまして！";
 
-          addMessage("samu", "録音が完了しました。再生します。");
-        };
-
-        mediaRecorder.start();
-        addMessage("samu", "録音を開始しました！");
-        document.getElementById("startButton").disabled = true;
-        document.getElementById("stopButton").disabled = false;
-      } catch (err) {
-        console.error(err);
-        addMessage("samu", "マイクの使用が許可されていません。");
       }
+
+      addMessage("samu", response);
+      speak(response);
+    }
+
+    startBtn.onclick = () => {
+      if (!("webkitSpeechRecognition" in window)) {
+        addMessage("samu", "音声認識に対応していないブラウザです。");
+        return;
+      }
+
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = "ja-JP";
+      recognition.interimResults = false;
+      recognition.continuous = false;
+
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        addMessage("user", text);
+        replyTo(text);
+      };
+
+      recognition.onerror = () => {
+        addMessage("samu", "認識エラーが発生しました。");
+      };
+
+      recognition.onend = () => {
+        startBtn.style.opacity = "1.0";
+        stopBtn.style.opacity = "0.5";
+        startBtn.style.pointerEvents = "auto";
+        stopBtn.style.pointerEvents = "none";
+      };
+
+      recognition.start();
+      addMessage("samu", "話しかけてください。");
+
+      startBtn.style.opacity = "0.5";
+      stopBtn.style.opacity = "1.0";
+      startBtn.style.pointerEvents = "none";
+      stopBtn.style.pointerEvents = "auto";
     };
 
-    document.getElementById("stopButton").onclick = () => {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-        document.getElementById("startButton").disabled = false;
-        document.getElementById("stopButton").disabled = true;
+    stopBtn.onclick = () => {
+      if (recognition) {
+        recognition.stop();
       }
+      startBtn.style.opacity = "1.0";
+      stopBtn.style.opacity = "0.5";
+      startBtn.style.pointerEvents = "auto";
+      stopBtn.style.pointerEvents = "none";
     };
+
+    // 最初は停止ボタン無効化
+    stopBtn.style.pointerEvents = "none";
   </script>
 
 </body>
