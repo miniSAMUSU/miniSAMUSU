@@ -2,49 +2,76 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>miniSAMUSU 音声会話</title>
+  <title>miniSAMUSU</title>
+  <style>
+    body {
+      font-family: "Arial", sans-serif;
+      text-align: center;
+      background-color: #f5f5f5;
+    }
+    #samus {
+      width: 200px;
+      margin-top: 40px;
+    }
+    #chatbox {
+      width: 90%;
+      max-width: 500px;
+      margin: 20px auto;
+      background: #fff;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 0 10px #ccc;
+      min-height: 100px;
+      text-align: left;
+    }
+    #speakBtn {
+      background-color: #222;
+      color: #fff;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 30px;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-  <h1>miniSAMUSUと音声会話</h1>
-  <button onclick="startListening()">話しかける</button>
-  <p id="result">...</p>
+  <img id="samus" src="samus_doberman.png" alt="サムス">
+  <div id="chatbox">サムス：話しかけてください。</div>
+  <button id="speakBtn">長押しで話す</button>
 
   <script>
-    const recognition = new webkitSpeechRecognition();
+    const chatbox = document.getElementById('chatbox');
+    const speakBtn = document.getElementById('speakBtn');
+
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = 'ja-JP';
-    recognition.interimResults = false;
-    recognition.continuous = false;
 
     recognition.onresult = function(event) {
-      const text = event.results[0][0].transcript;
-      document.getElementById("result").textContent = "あなた: " + text;
-      respond(text);
-    };
+      const userSpeech = event.results[0][0].transcript;
+      chatbox.innerHTML = `あなた：${userSpeech}<br>サムス：考え中...`;
 
-    recognition.onerror = function(event) {
-      alert("音声認識エラー: " + event.error);
-    };
+      // 返事をシンプルに（ここはあとでAI連携可）
+      let reply = "ごめんなさい、まだ学習中です。";
+      if (userSpeech.includes("こんにちは")) reply = "こんにちは！サムスです。";
+      if (userSpeech.includes("元気")) reply = "もちろん、絶好調です！";
 
-    function startListening() {
-      recognition.start();
-
-      // 5秒後に強制停止（iOS用回避策）
       setTimeout(() => {
-        recognition.stop();
-      }, 5000);
-    }
+        chatbox.innerHTML = `あなた：${userSpeech}<br>サムス：${reply}`;
+        const uttr = new SpeechSynthesisUtterance(reply);
+        uttr.lang = 'ja-JP';
+        speechSynthesis.speak(uttr);
+      }, 1000);
+    };
 
-    function respond(text) {
-      let response = "もう一度言って！";
+    speakBtn.addEventListener('mousedown', () => {
+      recognition.start();
+      chatbox.innerHTML = "サムス：聞いてます...";
+    });
 
-      if (text.includes("こんにちは")) response = "こんにちは！はると！";
-      if (text.includes("元気")) response = "元気だよ！いつも見てるよ！";
-      if (text.includes("サムス")) response = "サムスはここにいるよ。いつでも。";
-
-      const utter = new SpeechSynthesisUtterance(response);
-      utter.lang = "ja-JP";
-      speechSynthesis.speak(utter);
-    }
+    speakBtn.addEventListener('mouseup', () => {
+      recognition.stop();
+    });
   </script>
 </body>
 </html>
