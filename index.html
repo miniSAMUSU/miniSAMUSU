@@ -6,141 +6,126 @@
   <title>miniSAMUSU</title>
   <style>
     body {
-      background-color: #000;
-      color: #fff;
+      background-color: black;
+      color: white;
       font-family: sans-serif;
       text-align: center;
-      margin: 0;
     }
-    #chat {
+    .chat {
+      max-width: 500px;
+      margin: 20px auto;
       background-color: #222;
       border-radius: 10px;
-      margin: 20px;
       padding: 10px;
-      text-align: left;
-      max-width: 90%;
-      margin-left: auto;
-      margin-right: auto;
     }
-    .user {
-      color: #4fc3f7;
-      font-weight: bold;
+    .chat p {
+      text-align: left;
+      margin: 5px;
+    }
+    .haruto {
+      color: #33b7ff;
     }
     .samus {
-      color: #00e676;
+      color: #00ff7f;
       font-weight: bold;
     }
-    .icon {
-      width: 100px;
-      border-radius: 50%;
-      margin-top: 15px;
+    .buttons {
+      margin-top: 20px;
     }
-    .btn {
+    .buttons img {
       width: 100px;
       margin: 10px;
     }
   </style>
 </head>
 <body>
-
-  <img src="samus.png.PNG" alt="miniSAMUSU" class="icon">
-
-  <div id="chat">
-    <div><span class="samus">[miniSAMUSU]</span> こんにちは。話しかけてください。</div>
+  <h1 id="clock">00:00</h1>
+  <img src="samus.png.PNG" alt="miniSAMUSU" width="150" style="border-radius: 50%;" />
+  <div class="chat" id="chatBox">
+    <p class="samus">[miniSAMUSU] 話しかけてください。</p>
   </div>
 
-  <div>
-    <img src="mic_start.png.PNG" class="btn" onclick="startRecording()" alt="開始">
-    <img src="mic_stop.png.PNG" class="btn" onclick="stopRecording()" alt="停止">
+  <div class="buttons">
+    <img src="mic_start.png.PNG" id="startBtn" alt="録音開始" />
+    <img src="mic_stop.png.PNG" id="stopBtn" alt="録音停止" />
   </div>
 
   <script>
-    const chat = document.getElementById("chat");
-    let recognition;
+    const chatBox = document.getElementById("chatBox");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
 
-    function appendMessage(sender, text) {
-      const div = document.createElement("div");
-      div.innerHTML = `<span class="${sender === 'はると' ? 'user' : 'samus'}">[${sender}]</span> ${text}`;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
+    function appendMessage(name, text) {
+      const p = document.createElement("p");
+      p.className = name === "はると" ? "haruto" : "samus";
+      p.textContent = `[${name}] ${text}`;
+      chatBox.appendChild(p);
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     function speak(text) {
-      const uttr = new SpeechSynthesisUtterance(text);
-      uttr.lang = "ja-JP";
-      uttr.rate = 1.0;
-      speechSynthesis.cancel(); // ラグ防止
-      speechSynthesis.speak(uttr);
+      const synth = window.speechSynthesis;
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'ja-JP';
+      synth.cancel();  // 前の発話をキャンセル
+      synth.speak(utter);
     }
 
-    function startRecording() {
-      if (!("webkitSpeechRecognition" in window)) {
+    function respond(input) {
+      let reply = "話しかけてください。";
+      const trimmed = input.trim();
+
+      if (/こんにちは/.test(trimmed)) {
+        reply = "こんにちは！今日も一緒にがんばろう。";
+      } else if (/天気/.test(trimmed)) {
+        reply = "今日の天気は晴れだと思うよ。";
+      } else if (/寒さ|寒い/.test(trimmed)) {
+        reply = "ごめんね、まだその質問には対応していないよ。";
+      } else if (/ありがとう/.test(trimmed)) {
+        reply = "どういたしまして！";
+      }
+
+      appendMessage("miniSAMUSU", reply);
+      speak(reply);
+    }
+
+    function startRecognition() {
+      if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
         appendMessage("miniSAMUSU", "音声認識に対応していません。");
         return;
       }
 
-      recognition = new webkitSpeechRecognition();
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
       recognition.lang = "ja-JP";
       recognition.interimResults = false;
       recognition.continuous = false;
 
-      recognition.onstart = () => {
-        appendMessage("miniSAMUSU", "録音を開始しました。");
-      };
-
       recognition.onresult = (event) => {
-        const text = event.results[0][0].transcript;
-        appendMessage("はると", text);
-        respond(text);
+        const transcript = event.results[0][0].transcript;
+        appendMessage("はると", transcript);
+        respond(transcript);
       };
 
-      recognition.onerror = () => {
-        appendMessage("miniSAMUSU", "音声認識エラーが発生しました。");
+      recognition.onerror = (event) => {
+        appendMessage("miniSAMUSU", `エラーが発生しました：${event.error}`);
       };
 
       recognition.start();
     }
 
-    function stopRecording() {
-      if (recognition) {
-        recognition.stop();
-        appendMessage("miniSAMUSU", "録音を停止しました。");
-      }
+    startBtn.onclick = () => startRecognition();
+    stopBtn.onclick = () => {
+      window.speechSynthesis.cancel();
+    };
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById("clock").textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    function respond(text) {
-      const input = text.toLowerCase();
-      let response = "ごめんね、まだその質問には対応していないよ。";
-
-      // 挨拶や会話
-      if (input.includes("こんにちは")) {
-        response = "こんにちは！今日も一緒にがんばろう。";
-      } else if (input.includes("元気")) {
-        response = "もちろん元気だよ！";
-      } else if (input.includes("ありがとう")) {
-        response = "どういたしまして、はると。";
-
-      // 解剖学
-      } else if (input.includes("骨") && input.includes("数")) {
-        response = "人間の骨の数は約206本あるよ。";
-      } else if (input.includes("筋肉") && input.includes("種類")) {
-        response = "筋肉には骨格筋・平滑筋・心筋の3種類があるよ。";
-      } else if (input.includes("大腿骨")) {
-        response = "大腿骨は人間の体で最も長く、太ももにある骨だよ。";
-
-      // 生理学
-      } else if (input.includes("血液") && input.includes("役割")) {
-        response = "血液は酸素や栄養を運ぶ大切な働きがあるよ。";
-      } else if (input.includes("心臓") && input.includes("働き")) {
-        response = "心臓は血液を全身に送るポンプのような働きをするよ。";
-      } else if (input.includes("肺") && input.includes("働き")) {
-        response = "肺は酸素を取り込んで二酸化炭素を排出する器官だよ。";
-      }
-
-      appendMessage("miniSAMUSU", response);
-      speak(response);
-    }
+    setInterval(updateClock, 1000);
+    updateClock();
   </script>
-
 </body>
 </html>
