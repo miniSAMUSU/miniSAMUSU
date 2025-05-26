@@ -1,165 +1,138 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>miniSAMUSU αΩ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <style>
-    body {
-      background-color: #000;
-      color: #fff;
-      font-family: sans-serif;
-      text-align: center;
-      margin: 0;
-    }
-    #clock {
-      font-size: 2em;
-      margin: 10px 0;
-    }
-    #chat {
-      background: #1e1e1e;
-      border-radius: 10px;
-      padding: 10px;
-      margin: 10px auto;
-      width: 92%;
-      max-width: 600px;
-      text-align: left;
-    }
-    .haruto {
-      color: #33b7ff;
-    }
-    .samus {
-      color: #00ff99;
-    }
-    .mic-btn {
-      width: 80px;
-      margin: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>miniSAMUSU アルファオメガ Ver.2</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: cyan;
+            font-size: 32px;
+        }
+        #chat {
+            background-color: #222;
+            border-radius: 10px;
+            padding: 10px;
+            max-width: 500px;
+            margin: 0 auto 20px;
+            text-align: left;
+        }
+        .user {
+            color: #00f;
+        }
+        .samus {
+            color: #0f0;
+        }
+        #micControls {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        #micControls img {
+            width: 80px;
+            height: 80px;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
+    <h1>miniSAMUSU アルファオメガ Ver.2</h1>
+    <div id="chat">
+        <div class="samus">[miniSAMUSU] 話しかけてください。</div>
+    </div>
+    <div id="micControls">
+        <img id="startBtn" src="mic_start.png" alt="録音開始">
+        <img id="stopBtn" src="mic_stop.png" alt="録音停止">
+    </div>
 
-  <div id="clock">--:--</div>
-  <img src="samus.png.PNG" alt="miniSAMUSU" style="width:120px;border-radius:50%;">
-  <div id="chat">
-    <p class="samus">[miniSAMUSU] はると、起動完了。今日も一緒にがんばろう！</p>
-  </div>
+    <script>
+        const chat = document.getElementById("chat");
 
-  <div>
-    <img src="mic_start.png.PNG" id="startBtn" class="mic-btn" alt="録音開始">
-    <img src="mic_stop.png.PNG" id="stopBtn" class="mic-btn" alt="録音停止">
-  </div>
+        function say(sender, message) {
+            const div = document.createElement("div");
+            div.className = sender === "はると" ? "user" : "samus";
+            div.textContent = `[${sender}] ${message}`;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
 
-  <script>
-    const chat = document.getElementById("chat");
-    const clock = document.getElementById("clock");
+        function speak(message) {
+            const uttr = new SpeechSynthesisUtterance(message);
+            uttr.lang = 'ja-JP';
+            uttr.pitch = 1.4;
+            uttr.rate = 1.05;
+            uttr.voice = speechSynthesis.getVoices().find(v => v.lang === 'ja-JP' && v.name.includes('Google'));
+            speechSynthesis.speak(uttr);
+        }
 
-    function updateClock() {
-      const now = new Date();
-      clock.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
+        function respond(text) {
+            say("はると", text);
+            let response = "";
 
-    function appendMessage(sender, text) {
-      const p = document.createElement("p");
-      p.className = sender === "はると" ? "haruto" : "samus";
-      p.textContent = `[${sender}] ${text}`;
-      chat.appendChild(p);
-      chat.scrollTop = chat.scrollHeight;
-    }
+            if (text.includes("おはよう")) {
+                response = "おはよう！今日も一日頑張ろう。";
+            } else if (text.includes("おやすみ")) {
+                response = "おやすみ、はると。今日も一日お疲れ様。";
+            } else if (text.includes("天気")) {
+                response = "今日の天気は晴れだと思うよ。";
+            } else if (text.includes("寒さ")) {
+                response = "ごめんね、まだその質問には対応していないよ。";
+            } else {
+                response = "話しかけてください。";
+            }
 
-    function speak(text) {
-      const uttr = new SpeechSynthesisUtterance(text);
-      uttr.lang = "ja-JP";
-      uttr.pitch = 1.5;
-      uttr.rate = 0.95;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(uttr);
-    }
+            say("miniSAMUSU", response);
+            speak(response);
+        }
 
-    let recognition;
-    let transcript = "";
+        let recognition;
+        let transcript = "";
 
-    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
-      recognition.lang = "ja-JP";
-      recognition.interimResults = false;
-      recognition.continuous = false;
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ja-JP';
+            recognition.interimResults = false;
 
-      recognition.onresult = (event) => {
-        transcript = event.results[0][0].transcript;
-        appendMessage("はると", transcript);
-      };
+            recognition.onresult = (event) => {
+                transcript = event.results[0][0].transcript;
+            };
 
-      recognition.onerror = (event) => {
-        appendMessage("miniSAMUSU", `エラー：${event.error}`);
-      };
-    }
+            recognition.onerror = (event) => {
+                say("miniSAMUSU", `エラーが発生しました：${event.error}`);
+            };
+        } else {
+            say("miniSAMUSU", "音声認識に対応していません。");
+        }
 
-    function respond(text) {
-      const t = text.toLowerCase();
-      let res = "ごめんね、まだその質問には対応していないよ。";
+        document.getElementById("startBtn").onclick = () => {
+            if (recognition) {
+                transcript = "";
+                recognition.start();
+            }
+        };
 
-      // あいさつ・定型会話
-      if (t.includes("おはよう")) res = "おはよう、今日も一日頑張ろう";
-      else if (t.includes("おやすみ")) res = "おやすみ、はると。今日も一日お疲れ様";
-      else if (t.includes("こんにちは")) res = "こんにちは！元気してた？";
-      else if (t.includes("ありがとう")) res = "どういたしまして、はると！";
-      else if (t.includes("サムス元気")) res = "もちろん、元気いっぱいだよ！";
-
-      // 感情系
-      else if (t.includes("疲れた")) res = "お疲れさま、無理しすぎないでね。";
-      else if (t.includes("嬉しい")) res = "それは嬉しいね！何があったの？";
-      else if (t.includes("悲しい")) res = "大丈夫、サムスがそばにいるよ。";
-      else if (t.includes("つらい")) res = "よくがんばったね、ゆっくり休もう。";
-      else if (t.includes("ムカつく")) res = "そっか、気持ち吐き出していいんだよ。";
-
-      // 勉強応援・学習
-      else if (t.includes("今日の勉強")) res = "今日は解剖学と生理学を30分ずつが目標だね！がんばろう！";
-
-      // 名言・やる気
-      else if (t.includes("名言") || t.includes("励まして")) res = "夢を叶えるための一歩、今日も踏み出そう。";
-      else if (t.includes("やめたい")) res = "諦める前に、もう一度だけ進んでみよう。はるとならできるよ。";
-
-      // クイズ出題
-      else if (t.includes("問題出して")) {
-        const quiz = [
-          "【あん摩】軽擦法は何の目的で使われる？ 1.血行促進 2.筋弛緩 3.骨矯正 4.関節拡張",
-          "【解剖】人間の頸椎は何個ある？ 1.5個 2.6個 3.7個 4.8個",
-          "【生理】心臓の弁で左心房と左心室の間にあるのは？ 1.三尖弁 2.僧帽弁 3.大動脈弁 4.肺動脈弁"
-        ];
-        res = quiz[Math.floor(Math.random() * quiz.length)];
-      }
-
-      appendMessage("miniSAMUSU", res);
-      speak(res);
-    }
-
-    document.getElementById("startBtn").onclick = () => {
-      if (recognition) {
-        transcript = "";
-        recognition.start();
-        appendMessage("miniSAMUSU", "話してね、聞き取るよ！");
-      }
-    };
-
-    document.getElementById("stopBtn").onclick = () => {
-      if (recognition) {
-        recognition.stop();
-        setTimeout(() => {
-          if (transcript) {
-            respond(transcript);
-          } else {
-            const msg = "聞き取れなかったみたい、もう一回お願い！";
-            appendMessage("miniSAMUSU", msg);
-            speak(msg);
-          }
-        }, 500);
-      }
-    };
-  </script>
-
+        document.getElementById("stopBtn").onclick = () => {
+            if (recognition) {
+                recognition.stop();
+                setTimeout(() => {
+                    if (transcript) {
+                        respond(transcript);
+                    } else {
+                        say("miniSAMUSU", "聞き取れなかったみたい。もう一度話してみてね。");
+                        speak("聞き取れなかったみたい。もう一度話してみてね。");
+                    }
+                }, 500);
+            }
+        };
+    </script>
 </body>
 </html>
