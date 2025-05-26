@@ -1,11 +1,21 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>miniSAMUSU</title>
+    <title>miniSAMUSU 起動中</title>
   </head>
   <body>
     <h1>miniSAMUSU 起動中！</h1>
     <p>こんにちは、世界！</p>
+    <button onclick="speak()">話す</button>
+
+    <script>
+      function speak() {
+        const text = "こんにちは、僕はminiSAMUSUだよ！";
+        const speech = new SpeechSynthesisUtterance(text);
+        speech.lang = "ja-JP";
+        window.speechSynthesis.speak(speech);
+      }
+    </script>
   </body>
 </html>
